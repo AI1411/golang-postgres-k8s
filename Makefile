@@ -40,4 +40,4 @@ sqlc:
 
 .PHONY: test
 test:
-	richgo test ./... -v -cover
+	go test ./... -v -cover
