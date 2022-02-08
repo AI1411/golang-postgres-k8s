@@ -37,7 +37,9 @@ migratedown1:
 .PHONY: sqlc
 sqlc:
 	sqlc generate
-
 .PHONY: test
 test:
 	go test ./... -v -cover
+.PHONY: mock
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/AI1411/golang-postgres-k8s/db/sqlc Store
