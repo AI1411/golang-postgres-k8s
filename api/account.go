@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	db "github.com/AI1411/golang-postgres-k8s/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"log"
 	"net/http"
 )
@@ -37,6 +38,13 @@ func (server *Server) getAccount(ctx *gin.Context) {
 			return
 		}
 
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "foreign_key_violation", "unique_violation":
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
