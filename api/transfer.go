@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"fmt"
 	db "github.com/AI1411/golang-postgres-k8s/db/sqlc"
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,10 @@ type transferRequest struct {
 func (server *Server) goodAccountCurrency(ctx *gin.Context, accountID int64, currency string) bool {
 	account, err := server.store.GetAccount(ctx, accountID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return false
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return false
 	}
