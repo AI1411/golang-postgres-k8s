@@ -8,7 +8,11 @@ require (
 	github.com/stretchr/testify v1.7.0
 )
 
-require github.com/spf13/viper v1.10.1
+require (
+	github.com/go-playground/validator/v10 v10.4.1
+	github.com/golang/mock v1.6.0
+	github.com/spf13/viper v1.10.1
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -16,8 +20,6 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
-	github.com/go-playground/validator/v10 v10.4.1 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
