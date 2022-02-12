@@ -1,7 +1,10 @@
 package api
 
 import (
+	"fmt"
 	db "github.com/AI1411/golang-postgres-k8s/db/sqlc"
+	"github.com/AI1411/golang-postgres-k8s/token"
+	"github.com/AI1411/golang-postgres-k8s/util"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -10,26 +13,45 @@ import (
 )
 
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	config     util.Config
+	store      db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
-func NewServer(store db.Store) *Server {
-	server := &Server{store: store}
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPaseto(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+
+	server := &Server{
+		store:      store,
+		config:     config,
+		tokenMaker: tokenMaker,
+	}
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("currency", validCurrency)
+	}
+
+	server.setupRouter()
+
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		// アクセスを許可したいアクセス元
 		AllowOrigins: []string{
 			"http://localhost:3000",
 		},
-		// アクセスを許可したいHTTPメソッド(以下の例だとPUTやDELETEはアクセスできません)
 		AllowMethods: []string{
 			"POST",
 			"GET",
 			"OPTIONS",
 		},
-		// 許可したいHTTPリクエストヘッダ
 		AllowHeaders: []string{
 			"Access-Control-Allow-Credentials",
 			"Access-Control-Allow-Headers",
@@ -38,10 +60,8 @@ func NewServer(store db.Store) *Server {
 			"Accept-Encoding",
 			"Authorization",
 		},
-		// cookieなどの情報を必要とするかどうか
 		AllowCredentials: true,
-		// preflightリクエストの結果をキャッシュする時間
-		MaxAge: 24 * time.Hour,
+		MaxAge:           24 * time.Hour,
 	}))
 
 	router.GET("/accounts/:id", server.getAccount)
@@ -50,13 +70,9 @@ func NewServer(store db.Store) *Server {
 
 	router.POST("/transfers", server.createTransfer)
 	router.POST("/users", server.createUser)
-
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("currency", validCurrency)
-	}
+	router.POST("/users/login", server.loginUser)
 
 	server.router = router
-	return server
 }
 
 func (server *Server) Start() error {
